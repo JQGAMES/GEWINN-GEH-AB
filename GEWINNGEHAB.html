@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEWINN, GEH AB</title>
+    <style>
+        :root {
+            --dark-gray: #333;
+            --medium-gray: #444;
+            --light-gray: #555;
+            --text-color: #fff;
+            --board-bg: #222;
+            --board-border: #1a1a1a;
+            --button-color: #1a1a1a;
+            --button-hover-color: #555;
+            --shop-button-color: #1a1a1a;
+            --shop-button-hover-color: #555;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-gray);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            
+        }
+
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: clamp(2em, 5vw, 2.8em); /* Responsive Schriftgröße */
+            text-align: center;
+        }
+
+        .player-input-section {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 700px;
+            flex-wrap: wrap;
+        }
+
+        .player-input {
+            text-align: center;
+            flex: 1 1 280px;
+            min-width: 200px;
+        }
+
+        .player-input h2 {
+            margin-bottom: 10px;
+            font-size: clamp(1.3em, 3vw, 1.5em);
+        }
+
+        .player-input input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            width: calc(100% - 30px);
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .player-input input::placeholder {
+            color: #bbb;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--button-color);
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin-top: 15px;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background-color: var(--button-hover-color);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #start-game-btn {
+            display: block;
+            margin-top: 30px;
+            padding: 15px 35px;
+            font-size: 1.3em;
+        }
+
+        #game-container {
+            display: none; /* Initial versteckt */
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        #score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: clamp(1.2em, 2.5vw, 1.4em);
+            font-weight: bold;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .score-display {
+            padding: 10px 15px;
+            background-color: var(--medium-gray);
+            border-radius: 8px;
+            flex: 1 1 auto;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        #current-player-display {
+            font-size: clamp(1.5em, 3vw, 1.8em);
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 10px 20px;
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            min-width: 280px;
+            box-sizing: border-box;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(45px, 1fr));
+            grid-template-rows: repeat(6, minmax(45px, 1fr));
+            background-color: var(--board-bg);
+            border: 5px solid var(--board-border);
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: calc(7 * 80px + 10px); /* Max-Breite, um bei sehr großen Bildschirmen nicht zu riesig zu werden */
+            aspect-ratio: 7 / 6; /* Verhältnis 7:6 beibehalten */
+        }
+
+        .cell {
+            background-color: var(--medium-gray);
+            border-radius: 50%;
+            margin: 2%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 1 / 1; /* Zellen bleiben quadratisch */
+        }
+
+        .cell.highlight {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .token {
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            background-color: transparent;
+            overflow: hidden;
+        }
+        
+        .token .base-emoji {
+          position: absolute
+          top: 0
+          left: 0
+          width: 100%
+          height: 100%
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: clamp(1.4em, 3vw, 2.5em);
+          z-index: 1;
+        }
+
+        .token .background-emoji {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(2.3em, 5vw, 3em);
+            z-index: 0;
+        }
+
+        .token .overlay-emoji {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1.1em, 2.5vw, 1.5em);
+            z-index: 2;
+        }
+        .token .overlay-emoji.left {
+             left: 0;
+             width: 50%;
+        }
+        .token .overlay-emoji.right {
+            right: 0;
+            width: 50%;
+        }
+
+        #game-message {
+            margin-top: 20px;
+            font-size: clamp(1.2em, 2.5vw, 1.6em);
+            color: #f2f2e4;
+            text-align: center;
+            min-height: 1.5em;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .shop-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .shop-buttons button {
+            background-color: var(--shop-button-color);
+            flex: 1 1 120px;
+        }
+        .shop-buttons button:hover {
+            background-color: var(--shop-button-hover-color);
+        }
+
+        /* Shop Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            padding: 20px 10px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background-color: var(--medium-gray);
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 95%; /* Breiter auf kleinen Bildschirmen */
+            max-width: 650px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-button {
+            color: #aaa;
+            font-size: clamp(28px, 5vw, 32px);
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--text-color);
+        }
+
+        .shop-category {
+            margin-bottom: 25px;
+        }
+
+        .shop-category h3 {
+            margin-bottom: 15px;
+            font-size: clamp(1.2em, 2.5vw, 1.4em);
+            color: var(--text-color);
+            border-bottom: 1px solid #666;
+            padding-bottom: 8px;
+        }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Kleinere Mindestbreite für Items */
+            gap: 12px;
+        }
+
+        .shop-item {
+            background-color: var(--light-gray);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 80px;
+        }
+
+        .shop-item:hover:not(.purchased) {
+            background-color: #666;
+            transform: translateY(-2px);
+        }
+
+        .shop-item.purchased {
+            background-color: #3a3a3a;
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .shop-item-emoji {
+            font-size: clamp(2em, 4vw, 2.5em);
+            margin-bottom: 5px;
+        }
+
+        .shop-item-price {
+            position: absolute;
+            bottom: 5px;
+            right: 8px;
+            font-size: 0.75em;
+            color: #bbb;
+            background-color: #333;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        @media (max-width: 480px) {
+            .board {
+                grid-template-columns: repeat(7, minmax(38px, 1fr));
+                grid-template-rows: repeat(6, minmax(38px, 1fr));
+            }
+            .token {
+                font-size: clamp(1.4em, 3.5vw, 1.8em);
+            }
+            .token .background-emoji {
+                font-size: clamp(1.8em, 4.5vw, 2.3em);
+            }
+            .token .overlay-emoji {
+                font-size: clamp(0.9em, 2vw, 1.1em);
+            }
+            .shop-items {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>GEWINN, GEH AB</h1>
+
+    <div class="player-input-section">
+        <div class="player-input">
+            <h2>SPIELER 💙</h2>
+            <input type="text" id="player1-name" placeholder="Name #1" maxlength="15">
+        </div>
+        <div class="player-input">
+            <h2>SPIELER 🩷</h2>
+            <input type="text" id="player2-name" placeholder="Name #2" maxlength="15">
+        </div>
+    </div>
+
+    <button id="start-game-btn">GEH AB</button>
+
+    <div id="game-container">
+        <div id="score-board">
+            <div class="score-display">
+                <span id="player1-score-name">SPIELER 💙</span>: <span id="player1-score">0</span> Punkte
+            </div>
+            <div class="score-display">
+                <span id="player2-score-name">SPIELER 🩷</span>: <span id="player2-score">0</span> Punkte
+            </div>
+        </div>
+
+        <div id="current-player-display"></div>
+
+        <div class="board" id="connect4-board">
+            </div>
+
+        <div id="game-message"></div>
+
+        <div class="game-controls">
+            <button id="rematch-button" style="display: none;">REVANCHE</button>
+            <div class="shop-buttons">
+                <button id="shop1-button" style="display: none;">SHOP 💙</button>
+                <button id="shop2-button" style="display: none;">SHOP 🩷</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shopModal1" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>SHOP für <span id="shop-player1-name"></span></h2>
+            <p>Verfügbare Punkte: <span id="shop-player1-points">0</span></p>
+
+            <div class="shop-category">
+                <h3>Hintergründe (max. 1)</h3>
+                <div class="shop-items" id="background-shop-player1">
+                    <div class="shop-item" data-item="bg-orange" data-price="10" data-emoji="🟧">
+                        <span class="shop-item-emoji">🟧</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-yellow" data-price="10" data-emoji="🟨">
+                        <span class="shop-item-emoji">🟨</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-green" data-price="10" data-emoji="🟩">
+                        <span class="shop-item-emoji">🟩</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-purple" data-price="10" data-emoji="🟪">
+                        <span class="shop-item-emoji">🟪</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-blue" data-price="10" data-emoji="🟦">
+                        <span class="shop-item-emoji">🟦</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-white" data-price="15" data-emoji="⬜️">
+                        <span class="shop-item-emoji">⬜️</span>
+                        <span class="shop-item-price">15</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-category">
+                <h3>Tiere (max. 1)</h3>
+                <div class="shop-items" id="animal-shop-player1">
+                    <div class="shop-item" data-item="an-fish" data-price="12" data-emoji="🐠">
+                        <span class="shop-item-emoji">🐠</span>
+                        <span class="shop-item-price">12</span>
+                    </div>
+                    <div class="shop-item" data-item="an-chick" data-price="14" data-emoji="🐥">
+                        <span class="shop-item-emoji">🐥</span>
+                        <span class="shop-item-price">14</span>
+                    </div>
+                    <div class="shop-item" data-item="an-turtle" data-price="14" data-emoji="🐢">
+                        <span class="shop-item-emoji">🐢</span>
+                        <span class="shop-item-price">14</span>
+                    </div>
+                    <div class="shop-item" data-item="an-butterfly" data-price="16" data-emoji="🦋">
+                        <span class="shop-item-emoji">🦋</span>
+                        <span class="shop-item-price">16</span>
+                    </div>
+                    <div class="shop-item" data-item="an-squirrel" data-price="16" data-emoji="🐿">
+                        <span class="shop-item-emoji">🐿</span>
+                        <span class="shop-item-price">16</span>
+                    </div>
+                    <div class="shop-item" data-item="an-ladybug" data-price="18" data-emoji="🐞">
+                        <span class="shop-item-emoji">🐞</span>
+                        <span class="shop-item-price">18</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-category">
+                <h3>Essen (max. 1)</h3>
+                <div class="shop-items" id="food-shop-player1">
+                    <div class="shop-item" data-item="fd-watermelon" data-price="20" data-emoji="🍉">
+                        <span class="shop-item-emoji">🍉</span>
+                        <span class="shop-item-price">20</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-banana" data-price="22" data-emoji="🍌">
+                        <span class="shop-item-emoji">🍌</span>
+                        <span class="shop-item-price">22</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-pineapple" data-price="22" data-emoji="🍍">
+                        <span class="shop-item-emoji">🍍</span>
+                        <span class="shop-item-price">22</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-cherry" data-price="24" data-emoji="🍒">
+                        <span class="shop-item-emoji">🍒</span>
+                        <span class="shop-item-price">24</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-avocado" data-price="24" data-emoji="🥑">
+                        <span class="shop-item-emoji">🥑</span>
+                        <span class="shop-item-price">24</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-mushroom" data-price="30" data-emoji="🍄">
+                        <span class="shop-item-emoji">🍄</span>
+                        <span class="shop-item-price">30</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shopModal2" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>SHOP für <span id="shop-player2-name"></span></h2>
+            <p>Verfügbare Punkte: <span id="shop-player2-points">0</span></p>
+
+            <div class="shop-category">
+                <h3>Hintergründe (max. 1)</h3>
+                <div class="shop-items" id="background-shop-player2">
+                    <div class="shop-item" data-item="bg-orange" data-price="10" data-emoji="🟧">
+                        <span class="shop-item-emoji">🟧</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-yellow" data-price="10" data-emoji="🟨">
+                        <span class="shop-item-emoji">🟨</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-green" data-price="10" data-emoji="🟩">
+                        <span class="shop-item-emoji">🟩</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-purple" data-price="10" data-emoji="🟪">
+                        <span class="shop-item-emoji">🟪</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-blue" data-price="10" data-emoji="🟦">
+                        <span class="shop-item-emoji">🟦</span>
+                        <span class="shop-item-price">10</span>
+                    </div>
+                    <div class="shop-item" data-item="bg-white" data-price="15" data-emoji="⬜️">
+                        <span class="shop-item-emoji">⬜️</span>
+                        <span class="shop-item-price">15</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-category">
+                <h3>Tiere (max. 1)</h3>
+                <div class="shop-items" id="animal-shop-player2">
+                    <div class="shop-item" data-item="an-fish" data-price="12" data-emoji="🐠">
+                        <span class="shop-item-emoji">🐠</span>
+                        <span class="shop-item-price">12</span>
+                    </div>
+                    <div class="shop-item" data-item="an-chick" data-price="14" data-emoji="🐥">
+                        <span class="shop-item-emoji">🐥</span>
+                        <span class="shop-item-price">14</span>
+                    </div>
+                    <div class="shop-item" data-item="an-turtle" data-price="14" data-emoji="🐢">
+                        <span class="shop-item-emoji">🐢</span>
+                        <span class="shop-item-price">14</span>
+                    </div>
+                    <div class="shop-item" data-item="an-butterfly" data-price="16" data-emoji="🦋">
+                        <span class="shop-item-emoji">🦋</span>
+                        <span class="shop-item-price">16</span>
+                    </div>
+                    <div class="shop-item" data-item="an-squirrel" data-price="16" data-emoji="🐿">
+                        <span class="shop-item-emoji">🐿</span>
+                        <span class="shop-item-price">16</span>
+                    </div>
+                    <div class="shop-item" data-item="an-ladybug" data-price="18" data-emoji="🐞">
+                        <span class="shop-item-emoji">🐞</span>
+                        <span class="shop-item-price">18</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-category">
+                <h3>Essen (max. 1)</h3>
+                <div class="shop-items" id="food-shop-player2">
+                    <div class="shop-item" data-item="fd-watermelon" data-price="20" data-emoji="🍉">
+                        <span class="shop-item-emoji">🍉</span>
+                        <span class="shop-item-price">20</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-banana" data-price="22" data-emoji="🍌">
+                        <span class="shop-item-emoji">🍌</span>
+                        <span class="shop-item-price">22</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-pineapple" data-price="22" data-emoji="🍍">
+                        <span class="shop-item-emoji">🍍</span>
+                        <span class="shop-item-price">22</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-cherry" data-price="24" data-emoji="🍒">
+                        <span class="shop-item-emoji">🍒</span>
+                        <span class="shop-item-price">24</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-avocado" data-price="24" data-emoji="🥑">
+                        <span class="shop-item-emoji">🥑</span>
+                        <span class="shop-item-price">24</span>
+                    </div>
+                    <div class="shop-item" data-item="fd-mushroom" data-price="30" data-emoji="🍄">
+                        <span class="shop-item-emoji">🍄</span>
+                        <span class="shop-item-price">30</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ROWS = 6;
+        const COLS = 7;
+        let board = [];
+        let currentPlayer = 1; // 1 for Player 1 (💙), 2 for Player 2 (🩷)
+        let gameActive = false;
+
+        let player1Score = 0;
+        let player2Score = 0;
+        let player1Name = "SPIELER 💙";
+        let player2Name = "SPIELER 🩷";
+
+        // Shop-Inventar und gekaufte Gegenstände pro Spieler
+        const shopItems = {
+            backgrounds: [
+                { id: 'bg-orange', emoji: '🟧', price: 10 },
+                { id: 'bg-yellow', emoji: '🟨', price: 10 },
+                { id: 'bg-green', emoji: '🟩', price: 10 },
+                { id: 'bg-purple', emoji: '🟪', price: 10 },
+                { id: 'bg-blue', emoji: '🟦', price: 10 },
+                { id: 'bg-white', emoji: '⬜️', price: 15 },
+            ],
+            animals: [
+                { id: 'an-fish', emoji: '🐠', price: 12 },
+                { id: 'an-chick', emoji: '🐥', price: 14 },
+                { id: 'an-turtle', emoji: '🐢', price: 14 },
+                { id: 'an-butterfly', emoji: '🦋', price: 16 },
+                { id: 'an-squirrel', emoji: '🐿', price: 16 },
+                { id: 'an-ladybug', emoji: '🐞', price: 18 },
+            ],
+            foods: [
+                { id: 'fd-watermelon', emoji: '🍉', price: 20 },
+                { id: 'fd-banana', emoji: '🍌', price: 22 },
+                { id: 'fd-pineapple', emoji: '🍍', price: 22 },
+                { id: 'fd-cherry', emoji: '🍒', price: 24 },
+                { id: 'fd-avocado', emoji: '🥑', price: 24 },
+                { id: 'fd-mushroom', emoji: '🍄', price: 30 },
+            ]
+        };
+
+        let playerCustomization = {
+            1: {
+                background: null,
+                animal: null,
+                food: null,
+                purchased: new Set() // IDs der gekauften Artikel
+            },
+            2: {
+                background: null,
+                animal: null,
+                food: null,
+                purchased: new Set()
+            }
+        };
+
+
+        const boardElement = document.getElementById('connect4-board');
+        const currentPlayerDisplay = document.getElementById('current-player-display');
+        const gameMessage = document.getElementById('game-message');
+        const rematchButton = document.getElementById('rematch-button');
+        const shop1Button = document.getElementById('shop1-button');
+        const shop2Button = document.getElementById('shop2-button');
+        const startGameButton = document.getElementById('start-game-btn');
+        const player1NameInput = document.getElementById('player1-name');
+        const player2NameInput = document.getElementById('player2-name');
+
+        const shopModal1 = document.getElementById('shopModal1');
+        const shopModal2 = document.getElementById('shopModal2');
+
+        const shopPlayer1Points = document.getElementById('shop-player1-points');
+        const shopPlayer2Points = document.getElementById('shop-player2-points');
+        const shopPlayer1Name = document.getElementById('shop-player1-name');
+        const shopPlayer2Name = document.getElementById('shop-player2-name');
+
+
+        function initializeGame() {
+            board = Array(ROWS).fill(0).map(() => Array(COLS).fill(0));
+            boardElement.innerHTML = ''; // Vorhandenes Spielfeld leeren
+            gameActive = true;
+            gameMessage.textContent = '';
+            rematchButton.style.display = 'none';
+            shop1Button.style.display = 'none';
+            shop2Button.style.display = 'none';
+
+            // Zufällige Entscheidung, wer beginnt
+            currentPlayer = Math.random() < 0.5 ? 1 : 2;
+
+            renderBoard();
+            updatePlayerDisplay();
+            updateScoreBoard();
+        }
+
+        function renderBoard() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.addEventListener('click', () => handleCellClick(c));
+                    cell.addEventListener('mouseenter', () => highlightColumn(c, true));
+                    cell.addEventListener('mouseleave', () => highlightColumn(c, false));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+function updateBoardUI(row, col, player) {
+    const cell = boardElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    if (cell) {
+        const bgEmoji = playerCustomization[player].background ? `<span class="background-emoji">${playerCustomization[player].background.emoji}</span>` : '';
+        
+        // Das Herz-Emoji ist jetzt IMMER der Basis-Inhalt (über dem Hintergrund, unter Overlays)
+        const baseHeartEmoji = `<span class="base-emoji">${player === 1 ? '💙' : '🩷'}</span>`;
+
+        let overlayContent = ''; 
+        if (playerCustomization[player].animal && playerCustomization[player].food) {
+            // Tier links, Essen rechts, über dem Herz
+            overlayContent = `<span class="overlay-emoji left">${playerCustomization[player].animal.emoji}</span><span class="overlay-emoji right">${playerCustomization[player].food.emoji}</span>`;
+        } else if (playerCustomization[player].animal) {
+            // Nur Tier, über dem Herz
+            overlayContent = `<span class="overlay-emoji">${playerCustomization[player].animal.emoji}</span>`;
+        } else if (playerCustomization[player].food) {
+            // Nur Essen, über dem Herz
+            overlayContent = `<span class="overlay-emoji">${playerCustomization[player].food.emoji}</span>`;
+        }
+        // Wenn keines von beiden gekauft ist, bleibt overlayContent leer
+
+        cell.innerHTML = `
+            <div class="token player${player}">
+                ${bgEmoji}         ${baseHeartEmoji}  ${overlayContent}  </div>
+        `;
+    }
+}
+
+        function highlightColumn(col, add) {
+            if (!gameActive) return;
+            for (let r = 0; r < ROWS; r++) {
+                const cell = boardElement.querySelector(`[data-row="${r}"][data-col="${col}"]`);
+                if (add) {
+                    cell.classList.add('highlight');
+                } else {
+                    cell.classList.remove('highlight');
+                }
+            }
+        }
+
+        function updatePlayerDisplay() {
+            const currentPlayerName = currentPlayer === 1 ? player1Name : player2Name;
+            const currentPlayerEmoji = currentPlayer === 1 ? '💙' : '🩷';
+            currentPlayerDisplay.textContent = `Aktueller Spieler: ${currentPlayerName} ${currentPlayerEmoji}`;
+        }
+
+        function updateScoreBoard() {
+            document.getElementById('player1-score-name').textContent = player1Name;
+            document.getElementById('player2-score-name').textContent = player2Name;
+            document.getElementById('player1-score').textContent = player1Score;
+            document.getElementById('player2-score').textContent = player2Score;
+        }
+
+        function handleCellClick(col) {
+            if (!gameActive) return;
+
+            let row = -1;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r][col] === 0) {
+                    row = r;
+                    break;
+                }
+            }
+
+            if (row !== -1) {
+                board[row][col] = currentPlayer;
+                updateBoardUI(row, col, currentPlayer);
+
+                if (checkWin(row, col)) {
+                    gameMessage.textContent = `${currentPlayer === 1 ? player1Name : player2Name} ${currentPlayer === 1 ? '💙' : '🩷'} hat GEWONNEN!`;
+                    if (currentPlayer === 1) {
+                        player1Score += 3;
+                        player2Score += 1;
+                    } else {
+                        player2Score += 3;
+                        player1Score += 1;
+                    }
+                    gameActive = false;
+                    showEndGameButtons();
+                } else if (checkDraw()) {
+                    gameMessage.textContent = 'Unentschieden! Jeder bekommt 1 Punkt.';
+                    player1Score += 1;
+                    player2Score += 1;
+                    gameActive = false;
+                    showEndGameButtons();
+                } else {
+                    currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    updatePlayerDisplay();
+                }
+                updateScoreBoard();
+            } else {
+                gameMessage.textContent = 'Also bitte. Kein Platz mehr.';
+                setTimeout(() => {
+                    gameMessage.textContent = '';
+                }, 1500);
+            }
+        }
+
+        function checkWin(row, col) {
+            const player = board[row][col];
+
+            // Horizontal prüfen
+            for (let c = 0; c <= COLS - 4; c++) {
+                if (board[row][c] === player &&
+                    board[row][c + 1] === player &&
+                    board[row][c + 2] === player &&
+                    board[row][c + 3] === player) {
+                    return true;
+                }
+            }
+
+            // Vertikal prüfen
+            for (let r = 0; r <= ROWS - 4; r++) {
+                if (board[r][col] === player &&
+                    board[r + 1][col] === player &&
+                    board[r + 2][col] === player &&
+                    board[r + 3][col] === player) {
+                    return true;
+                }
+            }
+
+            // Diagonal (oben-links nach unten-rechts) prüfen
+            for (let r = 0; r <= ROWS - 4; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (board[r][c] === player &&
+                        board[r + 1][c + 1] === player &&
+                        board[r + 2][c + 2] === player &&
+                        board[r + 3][c + 3] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            // Diagonal (unten-links nach oben-rechts) prüfen
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c <= COLS - 4; c++) {
+                    if (board[r][c] === player &&
+                        board[r - 1][c + 1] === player &&
+                        board[r - 2][c + 2] === player &&
+                        board[r - 3][c + 3] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function checkDraw() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === 0) {
+                        return false; // Noch leere Zellen vorhanden
+                    }
+                }
+            }
+            return true; // Alle Zellen voll, Unentschieden
+        }
+
+        function showEndGameButtons() {
+            rematchButton.style.display = 'block';
+            shop1Button.style.display = 'inline-block';
+            shop2Button.style.display = 'inline-block';
+        }
+
+        rematchButton.addEventListener('click', initializeGame);
+
+        startGameButton.addEventListener('click', () => {
+            const p1Name = player1NameInput.value.trim();
+            const p2Name = player2NameInput.value.trim();
+
+            if (p1Name !== "") {
+                player1Name = p1Name;
+            }
+            if (p2Name !== "") {
+                player2Name = p2Name;
+            }
+
+            document.querySelector('.player-input-section').style.display = 'none';
+            startGameButton.style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+            initializeGame();
+        });
+
+
+        // --- Shop Logik ---
+        function openShop(playerNum) {
+            const modal = playerNum === 1 ? shopModal1 : shopModal2;
+            const pointsDisplay = playerNum === 1 ? shopPlayer1Points : shopPlayer2Points;
+            const nameDisplay = playerNum === 1 ? shopPlayer1Name : shopPlayer2Name;
+
+            pointsDisplay.textContent = playerNum === 1 ? player1Score : player2Score;
+            nameDisplay.textContent = playerNum === 1 ? player1Name : player2Name;
+
+            updateShopUI(playerNum); // Shop-Zustand aktualisieren (gekauft/nicht gekauft)
+            modal.style.display = 'flex';
+        }
+
+        function closeShop(playerNum) {
+            const modal = playerNum === 1 ? shopModal1 : shopModal2;
+            modal.style.display = 'none';
+        }
+
+        // Schließen-Buttons für Modals
+        document.querySelectorAll('.close-button').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const modalId = event.target.closest('.modal').id;
+                if (modalId === 'shopModal1') closeShop(1);
+                else if (modalId === 'shopModal2') closeShop(2);
+            });
+        });
+
+        // Schließen bei Klick außerhalb des Modals
+        window.addEventListener('click', (event) => {
+            if (event.target === shopModal1) closeShop(1);
+            if (event.target === shopModal2) closeShop(2);
+        });
+
+        shop1Button.addEventListener('click', () => openShop(1));
+        shop2Button.addEventListener('click', () => openShop(2));
+
+        function setupShopCategory(playerNum, categoryId, shopItemType) {
+            const shopItemsContainer = document.getElementById(`${categoryId}-shop-player${playerNum}`);
+            shopItemsContainer.innerHTML = ''; // Vorhandene Items leeren
+
+            shopItems[shopItemType].forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('shop-item');
+                itemDiv.dataset.item = item.id;
+                itemDiv.dataset.price = item.price;
+                itemDiv.dataset.emoji = item.emoji;
+
+                itemDiv.innerHTML = `
+                    <span class="shop-item-emoji">${item.emoji}</span>
+                    <span class="shop-item-price">${item.price}</span>
+                `;
+
+                // Wenn bereits gekauft
+                if (playerCustomization[playerNum].purchased.has(item.id)) {
+                    itemDiv.classList.add('purchased');
+                } 
+                // Wenn nicht genug Punkte UND nicht bereits gekauft
+                else if ((playerNum === 1 && player1Score < item.price) || (playerNum === 2 && player2Score < item.price)) {
+                     itemDiv.style.opacity = '0.5';
+                     itemDiv.style.cursor = 'not-allowed';
+                }
+
+                itemDiv.addEventListener('click', () => buyItem(playerNum, shopItemType, item.id));
+                shopItemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        function updateShopUI(playerNum) {
+            setupShopCategory(playerNum, 'background', 'backgrounds');
+            setupShopCategory(playerNum, 'animal', 'animals');
+            setupShopCategory(playerNum, 'food', 'foods');
+
+            const pointsDisplay = playerNum === 1 ? shopPlayer1Points : shopPlayer2Points;
+            pointsDisplay.textContent = playerNum === 1 ? player1Score : player2Score;
+        }
+
+        function buyItem(playerNum, itemType, itemId) {
+            const playerCurrentScore = playerNum === 1 ? player1Score : player2Score;
+            const item = shopItems[itemType].find(i => i.id === itemId);
+
+            if (!item) return;
+
+            const currentEquippedItem = playerCustomization[playerNum][itemType === 'backgrounds' ? 'background' : itemType === 'animals' ? 'animal' : 'food'];
+            
+            // Wenn der Gegenstand bereits gekauft ist und ausgerüstet werden soll, ohne Kosten
+            if (playerCustomization[playerNum].purchased.has(itemId)) {
+                // Wenn es das gleiche Item ist, das bereits ausgerüstet ist
+                if (currentEquippedItem && currentEquippedItem.id === itemId) {
+                     alert(`"${item.emoji}" ist bereits ausgewählt!`);
+                } else {
+                    // Item ist gekauft, aber nicht ausgerüstet (oder anderes Item in Kategorie ausgerüstet), also ausrüsten ohne Kosten
+                    playerCustomization[playerNum][itemType === 'backgrounds' ? 'background' : itemType === 'animals' ? 'animal' : 'food'] = item;
+                    alert(`"${item.emoji}" wurde ausgerüstet!`);
+                }
+                updateShopUI(playerNum);
+                return;
+            }
+
+            // Wenn noch nicht gekauft, aber schon ein Item in der Kategorie ausgewählt wurde
+            const categoryItems = shopItems[itemType];
+            let alreadyHasItemInThisCategory = false;
+            for (const categoryItem of categoryItems) {
+                if (playerCustomization[playerNum].purchased.has(categoryItem.id)) {
+                    alreadyHasItemInThisCategory = true;
+                    break;
+                }
+            }
+
+            if (alreadyHasItemInThisCategory) {
+                alert(`Du kannst nur einen Gegenstand aus der Kategorie "${itemType === 'backgrounds' ? 'Hintergründe' : itemType === 'animals' ? 'Tiere' : 'Essen'}" besitzen.`);
+                return;
+            }
+            
+            // Regulärer Kaufprozess
+            if (playerCurrentScore >= item.price) {
+                if (playerNum === 1) {
+                    player1Score -= item.price;
+                    playerCustomization[1][itemType === 'backgrounds' ? 'background' : itemType === 'animals' ? 'animal' : 'food'] = item;
+                } else {
+                    player2Score -= item.price;
+                    playerCustomization[2][itemType === 'backgrounds' ? 'background' : itemType === 'animals' ? 'animal' : 'food'] = item;
+                }
+                playerCustomization[playerNum].purchased.add(itemId);
+                updateScoreBoard();
+                updateShopUI(playerNum); // Shop neu rendern, um gekauftes Item zu zeigen
+                alert(`Super, du hast Dir "${item.emoji}" gekauft!`);
+            } else {
+                alert(`Du benötigst ${item.price} Punkte, hast aber nur ${playerCurrentScore}.`);
+            }
+        }
+
+        // Initiales Setup für Spielernamen und Spielstart-Button
+        player1NameInput.addEventListener('input', checkStartButtonStatus);
+        player2NameInput.addEventListener('input', checkStartButtonStatus);
+
+        function checkStartButtonStatus() {
+            startGameButton.disabled = !(player1NameInput.value.trim() !== "" && player2NameInput.value.trim() !== "");
+        }
+
+        // Start-Button initial deaktivieren
+        startGameButton.disabled = true;
+
+        // Beim Laden der Seite den initialen Zustand setzen
+        document.addEventListener('DOMContentLoaded', () => {
+            updateScoreBoard(); // Stellt sicher, dass die Punktstände initial 0 sind
+            checkStartButtonStatus(); // Überprüft den Start-Button-Status beim Laden
+        });
+        
+
+    </script>
+        <div style="text-align: center; font-size: 0.8em; color: #aaa; margin-top: 40px;">
+        copyright 2025 JQ GAMES
+    </div>
+
+</body>
+</html>
